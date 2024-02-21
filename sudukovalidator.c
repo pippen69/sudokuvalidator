@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "sudukovalidator.h"
 
 #define NUM_THREADS 11
 int sudoku[9][9] = { 
@@ -17,9 +16,14 @@ int sudoku[9][9] = {
     {3, 4, 5, 2, 8, 6, 1, 7, 9}
 };
 
+struct subgridParam {
+    int startRow;
+    int startCol;
+};
+
 // Thread function to check all rows
 void* checkRow(void* param) {
-   int (*sudoku)[9] = param;
+    int (*sudoku)[9] = param;
     bool check = true;
     // Logic to check each row for numbers 1 through 9
     for (int i = 0; i < 9; i++) {
@@ -52,9 +56,9 @@ void* checkColumn(void* param) {
     for (int i = 0; i < 9; i++) {
         bool checkColumn[9] = {false};
         for(int j = 0; j < 9; j++) {
-            checkColumn[sudoku[i][j] - 1] = true;
+            checkColumn[sudoku[j][i] - 1] = true;
         }
-            for(int  k= 0; k < 9; k++) {
+            for(int k = 0; k < 9; k++) {
                 if (checkColumn[k] == false) {
                     check = false;
                     break;
@@ -73,16 +77,16 @@ void* checkColumn(void* param) {
 
 // Thread function to check all 3x3 subgrids
 void* checkSubGrid(void* param) {
-     struct subgridParam* params = (struct subgridParam*)param;
-    int i;
-    int (*sudoku)[9] = param;
+    struct subgridParam* params = (struct subgridParam*)param;
+    int i, x;
+    int (*sudoku)[9] = (int (*)[9]) sudoku;
     bool rowCheck[9] = {false};
     int startRow = params->startRow;/* Calculate based on passed param */;
     int startCol = params->startCol;/* Calculate based on passed param */;
     bool check = true;
     // Logic to check 3x3 subgrid for numbers 1 through 9
     for(i = 0; i < 3; i++)
-        for(int x = 0; x < 3; x++)
+        for(x = 0; x < 3; x++)
             rowCheck[sudoku[startRow + i][startCol + x] - 1] = true;
     for(i = 0; i < 9; i++)
         if(rowCheck[i] == false) {
@@ -100,14 +104,17 @@ bool check = true;
 int main() {
     pthread_t threads[NUM_THREADS];
     int threadIndex = 0;
+    struct subgridParam param[9];
 
     // Row & column checks
-    pthread_create(&threads[threadIndex++], NULL, checkRow, NULL);
-    pthread_create(&threads[threadIndex++], NULL, checkColumn, NULL);
+    pthread_create(&threads[threadIndex++], NULL, checkRow, (void*)&sudoku);
+    pthread_create(&threads[threadIndex++], NULL, checkColumn, (void*)&sudoku);
 
     // Creating nine threads for each 3x3 subgrid validation (Subgrid checks)
     for(int i = 0; i < 9; i++) {
-        pthread_create(&threads[threadIndex++], NULL, checkSubGrid, (void*)(size_t)i);
+        param[i].startRow = (i / 3) * 3;
+        param[i].startCol = (i % 3) * 3;
+        pthread_create(&threads[threadIndex++], NULL, checkSubGrid, &param[i]);
     }
 
     // Waiting for all threads to complete
