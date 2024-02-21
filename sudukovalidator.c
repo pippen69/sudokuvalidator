@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "sudukovalidator.h"
 
 #define NUM_THREADS 11
 int sudoku[9][9] = { 
@@ -18,7 +19,6 @@ int sudoku[9][9] = {
 
 // Thread function to check all rows
 void* checkRow(void* param) {
-   int (*sudoku)[9] = param;
    int (*sudoku)[9] = param;
     bool check = true;
     // Logic to check each row for numbers 1 through 9
