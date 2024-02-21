@@ -16,6 +16,11 @@ int sudoku[9][9] = {
     {3, 4, 5, 2, 8, 6, 1, 7, 9}
 };
 
+struct subgridParam {
+    int startRow;
+    int startCol;
+};
+
 // Thread function to check all rows
 void* checkRow(void* param) {
    int (*sudoku)[9] = param;
